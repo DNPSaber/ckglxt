@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <script src="/static/ws.js"></script>
+    <link rel="stylesheet" href="/static/logins.css">
+    <script src="https://cdn.jsdelivr.net/npm/jsencrypt/bin/jsencrypt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/static/logins.js" type="module" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录页面</title>
+</head>
+<body>
+<div class="logins-container">
+    <h2>登录（测试）</h2>
+    <div class="error" id="error"></div>
+    <div class="input-group">
+        <img src="/static/user.png" alt="用户名图标">
+        <input type="text" id="username" placeholder="用户名" required>
+    </div>
+    <div class="input-group">
+        <img src="/static/passwd.png" alt="密码图标">
+        <input type="password" id="password" placeholder="密码" required>
+        <img src="/static/hide.png" alt="隐藏密码" id="toggleIcon" class="toggle-password">
+    </div>
+    <button>登录</button>
+</div>
+<script>
+    document.getElementById("toggleIcon").addEventListener("click", function () {
+        const passwordInput = document.getElementById("password");
+        const toggleIcon = document.getElementById("toggleIcon");
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            toggleIcon.src = "/static/display.png"; // 切换为显示密码图标
+            toggleIcon.alt = "显示密码";
+        } else {
+            passwordInput.type = "password";
+            toggleIcon.src = "/static/hide.png"; // 切换为隐藏密码图标
+            toggleIcon.alt = "隐藏密码";
+        }
+    });
+</script>
+</body>
+</html>
