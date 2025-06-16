@@ -31,11 +31,11 @@ async function logins() {
 
     try {
         const response = await axios.post('https://dnpsaber.cn/login', {
-            username: username,
+            username: username, 
             password: encryptedPassword
         });
         alert('登录成功: ' + response.data.message);
-        window.location.href = 'https://dnpsaber.cn/home'; // 跳转到 /home 页面
+        window.location.href = '/home'; // 跳转到 /home 页面
     } catch (error) {
         errorDiv.textContent = error.response?.data?.detail || '登录失败，请稍后重试';
     }

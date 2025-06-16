@@ -9,10 +9,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录页面</title>
+    <style>
+        .beian {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 <div class="logins-container">
-    <h2>登录（测试）</h2>
+    <h2>登录</h2>
     <div class="error" id="error"></div>
     <div class="input-group">
         <img src="/static/user.png" alt="用户名图标">
@@ -24,6 +30,9 @@
         <img src="/static/hide.png" alt="隐藏密码" id="toggleIcon" class="toggle-password">
     </div>
     <button>登录</button>
+    <div class="beian">
+        <a href="https://beian.miit.gov.cn/" target="_blank">宁ICP备2025008327号-1</a>
+    </div>
 </div>
 <script>
     document.getElementById("toggleIcon").addEventListener("click", function () {
@@ -32,11 +41,11 @@
 
         if (passwordInput.type === "password") {
             passwordInput.type = "text";
-            toggleIcon.src = "/static/display.png"; // 切换为显示密码图标
+            toggleIcon.src = "/static/display.png";
             toggleIcon.alt = "显示密码";
         } else {
             passwordInput.type = "password";
-            toggleIcon.src = "/static/hide.png"; // 切换为隐藏密码图标
+            toggleIcon.src = "/static/hide.png";
             toggleIcon.alt = "隐藏密码";
         }
     });
