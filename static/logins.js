@@ -35,9 +35,9 @@ async function logins() {
             password: encryptedPassword,
             deviceID: deviceId
         });
+        // 登录成功后只跳转，不主动连接 WebSocket
         alert('登录成功: ' + response.data.message);
-        localStorage.setItem('jwt_token', response.data.token);
-        window.location.href = '/home'; // 跳转到 /home 页面
+        window.location.href = '/home';
 
     } catch (error) {
         errorDiv.textContent = error.response?.data?.detail || '登录失败，请稍后重试';

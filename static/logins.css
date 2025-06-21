@@ -1,24 +1,33 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', 'Arial', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-    background-color: #f4f4f4;
+    background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
 }
 
 .logins-container {
     background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 350px;
+    padding: 40px 32px 32px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
+    width: 340px;
+    text-align: center;
+    animation: fadeIn 0.8s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .logins-container h2 {
-    margin-bottom: 20px;
-    text-align: center;
+    margin-bottom: 28px;
+    color: #2d3a4b;
+    font-weight: 600;
+    letter-spacing: 2px;
 }
 
 .logins-container input {
@@ -31,22 +40,29 @@ body {
 
 .logins-container button {
     width: 100%;
-    padding: 10px;
-    background-color: #007BFF;
-    color: white;
+    padding: 12px 0;
+    background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
     cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
 }
 
 .logins-container button:hover {
-    background-color: #0056b3;
+    background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
+    box-shadow: 0 4px 16px rgba(44, 62, 80, 0.12);
 }
 
 .error {
-    color: red;
-    font-size: 14px;
-    text-align: center;
+    color: #e74c3c;
+    margin-bottom: 12px;
+    min-height: 20px;
+    font-size: 15px;
 }
 
 .modal {
@@ -82,38 +98,61 @@ body {
 }
 
 .input-group {
-    position: relative;
     display: flex;
     align-items: center;
-    width: 100%;
+    background: #f4f6fb;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    padding: 0 12px;
+    border: 1px solid #e0e6ed;
+    transition: box-shadow 0.2s;
+}
+
+.input-group:focus-within {
+    box-shadow: 0 0 0 2px #74ebd5;
+    border-color: #74ebd5;
 }
 
 .input-group img {
-    height: 100%; /* 图标高度与输入框一致 */
-    width: auto; /* 保持图标宽高比 */
-    max-width: 40px; /* 限制图标最大宽度 */
-    object-fit: contain; /* 确保图标内容完整显示 */
-    margin-right: 10px; /* 图标与输入框的间距 */
+    width: 22px;
+    height: 22px;
+    margin-right: 8px;
 }
 
 .input-group input {
-    height: 40px; /* 输入框高度 */
-    padding-left: 10px; /* 确保文字不贴边 */
-    box-sizing: border-box;
-}
-
-.input-group input {
+    border: none;
+    background: transparent;
+    outline: none;
     flex: 1;
-    padding-left: 0.5rem; /* 确保输入框文字不贴边 */
-    box-sizing: border-box;
+    font-size: 16px;
+    padding: 12px 0;
 }
 
 .toggle-password {
-    position: absolute;
-    right: 0.5rem; /* 距离输入框右侧的距离 */
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1.5rem; /* 图标宽度 */
-    height: 1.5rem; /* 图标高度 */
     cursor: pointer;
+    width: 22px;
+    height: 22px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.toggle-password:hover {
+    opacity: 1;
+}
+
+.beian {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 13px;
+    color: #888;
+}
+
+.beian a {
+    color: #888;
+    text-decoration: none;
+}
+
+.beian a:hover {
+    text-decoration: underline;
+    color: #74ebd5;
 }
