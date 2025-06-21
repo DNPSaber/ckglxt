@@ -1,5 +1,5 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends ,Request, Cookie , Body
-from fastapi.responses import FileResponse,RedirectResponse, HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request, Cookie, Body, Response
+from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sql_control import sql_Management
 import uvicorn
@@ -67,7 +67,10 @@ def login(request: LoginRequest, http_request: Request):
         logger.error(f"密码解密失败: {e}")
         raise HTTPException(status_code=400, detail="密码解码失败")
 
-    # 查询user.db3数据库，校验用户名和密码
+    if request.username != "root":
+        decrypted_password = hashlib.md5(decrypted_password.encode('utf-8')).hexdigest()
+
+        # 查询user.db3数据库，校验用户名和密码
     try:
         conn = connect('user.db3')
         cursor = conn.cursor()
@@ -86,9 +89,13 @@ def login(request: LoginRequest, http_request: Request):
     live = live_level
 
     # 创建数据库连接并存储到连接池
-    sql_manager = sql_Management(sql_user=os.environ.get(f'MYSQL_NAME_LIVE{live}'),
-                                 sql_user_passwd=os.environ.get(f"MYSQL_PASSWD_LIVE{live}"))
-    result = sql_manager.sql_connect()
+    if live > "1":
+        sql_manager = sql_Management(sql_user=os.environ.get(f'MYSQL_NAME_LIVE{live}'),
+                                     sql_user_passwd=os.environ.get(f"MYSQL_PASSWD_LIVE{live}"))
+        result = sql_manager.sql_connect()
+    elif live == "1":
+        sql_manager = None
+        result = "成功"
     if "成功" in result:
         connection_pool[user_device_key] = sql_manager
         if user_device_key not in active_websockets:
@@ -169,6 +176,7 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info(f"WebSocket认证通过: {user_device_key} 已加入活动连接池")
 
     last_ping = asyncio.get_event_loop().time()
+
     async def heartbeat_checker():
         nonlocal last_ping
         while True:
@@ -214,7 +222,8 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.info(f"finally: connection_pool={connection_pool}")
         if ws_set:
             ws_set.discard(websocket)
-            logger.info(f"WebSocket 断开: {user_device_key}，当前剩余连接数: {len(ws_set)}，ws_set内容: {[id(ws) for ws in ws_set]}")
+            logger.info(
+                f"WebSocket 断开: {user_device_key}，当前剩余连接数: {len(ws_set)}，ws_set内容: {[id(ws) for ws in ws_set]}")
             if len(ws_set) == 0:
                 # 如果该用户设备的所有 WebSocket 都断开，关闭数据库
                 sql_manager = connection_pool.pop(user_device_key, None)
@@ -224,6 +233,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 active_websockets.pop(user_device_key, None)
         else:
             logger.info(f"finally: ws_set 不存在，user_device_key={user_device_key}")
+
 
 @app.get("/home")
 def home(request: Request, jwt_token: str = Cookie(None)):
@@ -239,11 +249,23 @@ def home(request: Request, jwt_token: str = Cookie(None)):
         if user_device_key not in connection_pool:
             # 连接池无效，弹窗提示
             return HTMLResponse('<script>alert("会话已失效，请重新登录");window.location.href="/";</script>')
+        # 查询用户等级
+        conn = connect('user.db3')
+        cursor = conn.cursor()
+        cursor.execute("SELECT live FROM usernames WHERE name=?", (userID,))
+        row = cursor.fetchone()
+        conn.close()
+        if not row:
+            return HTMLResponse('<script>alert("用户不存在，请重新登录");window.location.href="/";</script>')
+        live = row[0]
+        if str(live) == "1":
+            return FileResponse("static/live1.html")
+        else:
+            return FileResponse("static/home.html")
     except jwt.ExpiredSignatureError:
         return HTMLResponse('<script>alert("登录已超过30分钟，请重新登录");window.location.href="/";</script>')
     except Exception:
         return HTMLResponse('<script>alert("登录凭证无效，请重新登录");window.location.href="/";</script>')
-    return FileResponse("static/home.html")
 
 
 @app.get("/favicon.ico")
@@ -281,13 +303,45 @@ def register(request: RegisterRequest = Body(...)):
     md5_passwd = hashlib.md5(decrypted_password.encode('utf-8')).hexdigest()
     # 插入新用户
     try:
-        cursor.execute("INSERT INTO usernames (name, passwd, live) VALUES (?, ?, ?)", (request.username, md5_passwd, '1'))
+        cursor.execute("INSERT INTO usernames (name, passwd, live) VALUES (?, ?, ?)",
+                       (request.username, md5_passwd, '1'))
         conn.commit()
         conn.close()
     except Exception as e:
         logger.error(f"注册-插入用户失败: {e}")
         raise HTTPException(status_code=500, detail="注册失败，请稍后重试")
     return {"message": "注册成功"}
+
+
+@app.post("/api/clear_conn")
+def clear_conn(request: Request, jwt_token: str = Cookie(None)):
+    """
+    清除当前用户的连接池（登出/访客返回登录页时调用）
+    """
+    if not jwt_token:
+        return {"message": "no token"}
+    try:
+        payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=["HS256"])
+        userID = payload["userID"]
+        deviceID = payload["deviceID"]
+        user_device_key = f"{userID}_{deviceID}"
+        # 移除连接池和websocket
+        if user_device_key in connection_pool:
+            sql_manager = connection_pool.pop(user_device_key)
+            if sql_manager:
+                try:
+                    sql_manager.__exit__(None, None, None)
+                except Exception:
+                    pass
+        if user_device_key in active_websockets:
+            active_websockets.pop(user_device_key)
+        # 清除cookie
+        res = Response(content='{"message": "ok"}', media_type="application/json")
+        res.delete_cookie("jwt_token", path="/")
+        return res
+    except Exception as e:
+        logger.error(f"clear_conn error: {e}")
+        return {"message": "error"}
 
 
 def web_run():

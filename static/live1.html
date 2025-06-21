@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>访客主页</title>
+  <link rel="stylesheet" href="/static/home.css">
+  <style>
+    .home-container {
+      background: #fff;
+      padding: 48px 36px 36px 36px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
+      text-align: center;
+      max-width: 400px;
+      margin: 60px auto;
+      animation: fadeIn 0.8s;
+    }
+    .home-container h1 {
+      color: #2d3a4b;
+      font-size: 2.1em;
+      margin-bottom: 18px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .home-container p {
+      color: #666;
+      font-size: 1.08em;
+      margin: 12px 0;
+    }
+    .home-container span {
+      color: #4e8cff;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .home-container .warn {
+      color: #e67e22;
+      font-size: 1.05em;
+      margin-top: 18px;
+      background: #fff7e6;
+      border-radius: 6px;
+      padding: 10px 0;
+      border: 1px solid #ffe0b2;
+      display: inline-block;
+      width: 90%;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .back-btn {
+      margin-top: 28px;
+      padding: 12px 0;
+      width: 90%;
+      background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+    }
+    .back-btn:hover {
+      background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
+      box-shadow: 0 4px 16px rgba(44, 62, 80, 0.12);
+    }
+  </style>
+</head>
+<body>
+<div class="home-container">
+    <h1>欢迎来到主页！</h1>
+    <p>您已成功登录。</p>
+    <p>您的权限为 <span>live1</span>。</p>
+    <div class="warn">访客无法查看内容，请联系管理员提升权限。</div>
+    <button id="backToLoginBtn" class="back-btn">确定</button>
+</div>
+<script>
+    document.getElementById('backToLoginBtn').onclick = function() {
+        fetch('/api/clear_conn', {method: 'POST'}).finally(() => {
+            window.location.href = '/';
+        });
+    };
+</script>
+</body>
+</html>
