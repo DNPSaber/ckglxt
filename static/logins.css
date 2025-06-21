@@ -65,6 +65,7 @@ body {
     font-size: 15px;
 }
 
+/* 注册弹窗美化 */
 .modal {
     display: none; /* 默认隐藏 */
     position: fixed;
@@ -80,21 +81,40 @@ body {
 
 .modal-content {
     background: #fff;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 32px 28px 24px 28px;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+    width: 340px;
+    max-width: 90vw;
     text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 300px;
+    position: relative;
+    animation: fadeIn 0.5s;
+}
+
+.modal-content h3 {
+    margin-bottom: 18px;
+    color: #2d3a4b;
+    font-weight: 600;
+    letter-spacing: 2px;
 }
 
 .modal-content button {
     margin-top: 10px;
-    padding: 5px 10px;
+    padding: 12px 0;
+    background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
     border: none;
-    background-color: #007bff;
+    border-radius: 8px;
     color: #fff;
-    border-radius: 4px;
+    font-size: 18px;
+    font-weight: 600;
     cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+}
+
+.modal-content button:hover {
+    background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
+    box-shadow: 0 4px 16px rgba(44, 62, 80, 0.12);
 }
 
 .input-group {
@@ -155,4 +175,130 @@ body {
 .beian a:hover {
     text-decoration: underline;
     color: #74ebd5;
+}
+
+#registerModal .modal-content {
+    background: #fff;
+    padding: 32px 28px 24px 28px;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+    width: 340px;
+    max-width: 90vw;
+    text-align: center;
+    position: relative;
+    animation: fadeIn 0.5s;
+}
+
+#registerModal h3 {
+    margin-bottom: 18px;
+    color: #2d3a4b;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+#registerModal .register-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 10px;
+    margin: 10px 0 18px 0;
+    border: 1px solid #e0e6ed;
+    border-radius: 5px;
+    font-size: 16px;
+    background: #f4f6fb;
+    outline: none;
+    transition: border 0.2s, box-shadow 0.2s;
+    display: block;
+}
+
+#registerModal .register-input:focus {
+    border: 1.5px solid #74ebd5;
+    box-shadow: 0 0 0 2px #74ebd5;
+}
+
+#registerModal .input-group {
+    margin-bottom: 18px;
+    padding: 0 12px;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    background: #f4f6fb;
+    display: flex;
+    align-items: center;
+}
+
+#registerModal .input-group input.register-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    flex: 1;
+    font-size: 16px;
+    padding: 12px 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+#registerModal .input-group input.register-input:focus {
+    border: none;
+    box-shadow: none;
+}
+
+#registerModal .input-group img.toggle-password {
+    width: 22px;
+    height: 22px;
+    margin-right: 0;
+    margin-left: 8px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+#registerModal .input-group img.toggle-password:hover {
+    opacity: 1;
+}
+
+#registerModal .close {
+    color: #aaa;
+    position: absolute;
+    right: 18px;
+    top: 8px;
+    font-size: 28px;
+    font-weight: bold;
+    z-index: 2;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#registerModal .close:hover,
+#registerModal .close:focus {
+    color: #e74c3c;
+    text-decoration: none;
+}
+
+#registerModal button#registerConfirmBtn {
+    width: 100%;
+    padding: 12px 0;
+    background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+}
+
+#registerModal button#registerConfirmBtn:hover {
+    background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
+    box-shadow: 0 4px 16px rgba(44, 62, 80, 0.12);
+}
+
+@media (max-width: 400px) {
+    #registerModal .modal-content {
+        width: 96vw;
+        padding: 18px 4vw 18px 4vw;
+    }
+    #registerModal .register-input {
+        font-size: 15px;
+    }
 }

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends ,Request, Cookie
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends ,Request, Cookie , Body
 from fastapi.responses import FileResponse,RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sql_control import sql_Management
@@ -11,6 +11,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_v1_5
 from pydantic import BaseModel
 import base64
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Set
 from sqlite3 import connect
@@ -171,7 +172,8 @@ async def websocket_endpoint(websocket: WebSocket):
     async def heartbeat_checker():
         nonlocal last_ping
         while True:
-            if asyncio.get_event_loop().time() - last_ping > 30:
+            await asyncio.sleep(2)
+            if asyncio.get_event_loop().time() - last_ping > 180:
                 logger.info(f"heartbeat_checker: 触发断开 {user_device_key}")
                 logger.info(f"WebSocket心跳超时: {user_device_key}，自动断开并清理连接池")
                 await websocket.close(code=4004, reason="心跳超时，连接已失效")
@@ -247,6 +249,45 @@ def home(request: Request, jwt_token: str = Cookie(None)):
 @app.get("/favicon.ico")
 def favicon():
     return FileResponse("static/favicon.png")
+
+
+# 定义注册请求体模型
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/register")
+def register(request: RegisterRequest = Body(...)):
+    # 检查用户名是否已存在
+    try:
+        conn = connect('user.db3')
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM usernames WHERE name=?", (request.username,))
+        if cursor.fetchone():
+            conn.close()
+            raise HTTPException(status_code=400, detail="用户已存在")
+    except Exception as e:
+        logger.error(f"注册-数据库查询失败: {e}")
+        raise HTTPException(status_code=500, detail="数据库查询失败")
+    # 解密密码
+    try:
+        cipher = PKCS1_v1_5.new(private_key)
+        decrypted_password = cipher.decrypt(base64.b64decode(request.password), None).decode('utf-8')
+    except Exception as e:
+        logger.error(f"注册-密码解密失败: {e}")
+        raise HTTPException(status_code=400, detail="密码解码失败")
+    # 取md5值
+    md5_passwd = hashlib.md5(decrypted_password.encode('utf-8')).hexdigest()
+    # 插入新用户
+    try:
+        cursor.execute("INSERT INTO usernames (name, passwd, live) VALUES (?, ?, ?)", (request.username, md5_passwd, '1'))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logger.error(f"注册-插入用户失败: {e}")
+        raise HTTPException(status_code=500, detail="注册失败，请稍后重试")
+    return {"message": "注册成功"}
 
 
 def web_run():

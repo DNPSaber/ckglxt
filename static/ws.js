@@ -24,14 +24,14 @@ function defineConnectWebSocket() {
         let ws = new WebSocket("wss://dnpsaber.cn/ws");
         ws.onopen = function () {
             ws.send(token);
-            // 启动心跳包定时器，每5秒发送一次
+            // 启动心跳包定时器，每90秒发送一次
             // console.log("WebSocket已连接，发送token:", token); // 保留关键日志
             ws.heartbeatInterval = setInterval(function () {
                 if (ws.readyState === WebSocket.OPEN) {
                     // console.log("发送心跳包"); // 注释掉高频心跳日志
                     ws.send('{\"type\": \"ping\"}');
                 }
-            }, 5000);
+            }, 90000);
             if (typeof onOpenCallback === 'function') {
                 onOpenCallback();
             }
