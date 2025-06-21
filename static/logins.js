@@ -36,7 +36,9 @@ async function logins() {
             deviceID: deviceId
         });
         alert('登录成功: ' + response.data.message);
+        localStorage.setItem('jwt_token', response.data.token);
         window.location.href = '/home'; // 跳转到 /home 页面
+
     } catch (error) {
         errorDiv.textContent = error.response?.data?.detail || '登录失败，请稍后重试';
     }

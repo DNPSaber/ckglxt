@@ -81,43 +81,6 @@ class sql_Management:
         print(message)
         return message
 
-    def sql_user_create(self, admin_user=None, admin_user_passwd=None):
-        """
-        创建新用户（仅管理员用户可用）。
-
-        :param admin_user: 新用户的用户名
-        :param admin_user_passwd: 新用户的密码
-        """
-        logger.info(f'用户{self.user}创建用户{admin_user}')
-        if self.userType != "root":
-            logger.error("当前用户不是管理员，无法创建用户")
-            return
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(f"CREATE USER '{admin_user}'@'%' IDENTIFIED BY '{admin_user_passwd}';")
-                logger.info(f"用户 {admin_user} 创建成功")
-            self.conn.commit()
-        except pymysql.MySQLError as e:
-            logger.error(f"创建用户失败: {e}", exc_info=False)
-
-    def sql_user_delete(self, admin_user=None):
-        """
-        删除用户（仅管理员用户可用）。
-
-        :param admin_user: 要删除的用户名
-        """
-        logger.info(f'用户{self.user}删除用户{admin_user}')
-        if self.userType != "root":
-            logger.error("当前用户不是管理员，无法删除用户")
-            return
-        try:
-            with self.conn.cursor() as cursor:
-                cursor.execute(f"DROP USER '{admin_user}'@'%';")
-                logger.info(f"用户 {admin_user} 删除成功")
-            self.conn.commit()
-        except pymysql.MySQLError as e:
-            logger.error(f"删除用户失败: {e}", exc_info=False)
-
     def check_database_exists(self, database_name='dnpsaber'):
         """
         检查指定数据库是否存在，如果不存在则创建。
@@ -182,6 +145,5 @@ if __name__ == "__main__":
     # 示例代码：创建 sql_Management 实例并执行相关操作
     sql = sql_Management("root", "8507181ZZZzzz")
     sql.sql_connect()
-    sql.sql_user_create('12345', '58233')
     sql.check_database_exists()
     sql.list_tables()
