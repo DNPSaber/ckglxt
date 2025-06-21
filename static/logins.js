@@ -28,11 +28,12 @@ async function logins() {
         errorDiv.textContent = '密码加密失败，请重试';
         return;
     }
-
+    const deviceId = localStorage.getItem('deviceId');
     try {
         const response = await axios.post('https://dnpsaber.cn/login', {
-            username: username, 
-            password: encryptedPassword
+            username: username,
+            password: encryptedPassword,
+            deviceID: deviceId
         });
         alert('登录成功: ' + response.data.message);
         window.location.href = '/home'; // 跳转到 /home 页面
