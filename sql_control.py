@@ -18,7 +18,7 @@ class sql_Management:
         """
         self.user = sql_user
         self.user_passwd = sql_user_passwd
-        self.host = "mysql.dnpsaber.cn"
+        self.host = "127.0.0.1"
         self.port = 3306
         self.conn = None
         self.userType = None
