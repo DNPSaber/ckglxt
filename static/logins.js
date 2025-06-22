@@ -30,10 +30,12 @@ async function logins() {
     }
     const deviceId = localStorage.getItem('deviceId');
     try {
-        const response = await axios.post('https://dnpsaber.cn/login', {
+        const response = await axios.post('/login', {
             username: username,
             password: encryptedPassword,
             deviceID: deviceId
+        }, {
+            headers: { 'Content-Type': 'application/json' }
         });
         // 登录成功后只跳转，不主动连接 WebSocket
         alert('登录成功: ' + response.data.message);

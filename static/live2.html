@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>访客主页</title>
+    <title>只读用户主页</title>
     <script src="/static/devid.js"></script>
     <script src="/static/ws.js"></script>
     <link rel="stylesheet" href="/static/home.css">
@@ -17,7 +17,6 @@
             margin: 60px auto;
             animation: fadeIn 0.8s;
         }
-
         .home-container h1 {
             color: #2d3a4b;
             font-size: 2.1em;
@@ -25,19 +24,16 @@
             font-weight: 700;
             letter-spacing: 2px;
         }
-
         .home-container p {
             color: #666;
             font-size: 1.08em;
             margin: 12px 0;
         }
-
         .home-container span {
             color: #4e8cff;
             font-weight: bold;
             font-size: 1.1em;
         }
-
         .home-container .warn {
             color: #e67e22;
             font-size: 1.05em;
@@ -49,19 +45,7 @@
             display: inline-block;
             width: 90%;
         }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .back-btn {
+        .export-btn {
             margin-top: 28px;
             padding: 12px 0;
             width: 90%;
@@ -75,8 +59,7 @@
             transition: background 0.2s, box-shadow 0.2s;
             box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
         }
-
-        .back-btn:hover {
+        .export-btn:hover {
             background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
             box-shadow: 0 4px 16px rgba(44, 62, 80, 0.12);
         }
@@ -84,17 +67,16 @@
 </head>
 <body>
 <div class="home-container">
-    <h1>欢迎来到主页！</h1>
+    <h1>欢迎来到只读主页！</h1>
     <p>您已成功登录。</p>
-    <p>您的权限为 <span>live1</span>。</p>
-    <div class="warn">访客无法查看内容，请联系管理员提升权限。</div>
-    <button id="backToLoginBtn" class="back-btn">确定</button>
+    <p>您的权限为 <span>live2（只读）</span>。</p>
+    <div class="warn">您只能查看和导出数据，无法进行编辑和写入操作。</div>
+    <button id="exportBtn" class="export-btn">导出数据</button>
 </div>
 <script>
-    document.getElementById('backToLoginBtn').onclick = function () {
-        fetch('/api/clear_conn', {method: 'POST'}).finally(() => {
-            window.location.href = '/';
-        });
+    document.getElementById('exportBtn').onclick = function () {
+        // 假设后端有 /api/export_data 导出接口
+        window.location.href = '/api/export_data';
     };
 </script>
 </body>

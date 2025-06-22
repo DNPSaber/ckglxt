@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员页面 - 移动版</title>
+<!--    <script src="/static/devid.js"></script>-->
+<!--    <script src="/static/deviceDetect.js"></script>-->
+<!--    <script src="/static/ws.js"></script>-->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsencrypt/bin/jsencrypt.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 主容器 - 调整padding，移除顶部空间 */
+        .mobile-container {
+            padding: 15px 15px 80px 15px;
+            box-sizing: border-box;
+        }
+
+        /* 菜单列表 */
+        .menu-scroll {
+            margin-bottom: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 5px;
+        }
+
+        .menu-list {
+            display: flex;
+            gap: 10px;
+            padding: 0 5px;
+            min-width: max-content;
+        }
+
+        .menu-item {
+            background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+            color: #fff;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .menu-item.active {
+            background: linear-gradient(90deg, #4e8cff 0%, #74ebd5 100%);
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.15);
+        }
+
+        /* 内容区域 */
+        .tab-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+        }
+
+        .tab-content h2 {
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2d3a4b;
+        }
+
+        /* 系统管理相关样式 */
+        .sys-manage-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sys-manage-tabs button {
+            padding: 8px 15px;
+            background: #e0eafc;
+            color: #4e8cff;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .sys-manage-tabs button.active {
+            background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+            color: #fff;
+        }
+
+        /* 用户表格 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 8px 5px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f4f6fb;
+            font-weight: bold;
+        }
+
+        /* 操作按钮 */
+        button {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin: 2px;
+        }
+
+        .edit-btn {
+            background: #fff;
+            border: 1.5px solid #4e8cff;
+            color: #4e8cff;
+        }
+
+        .delete-btn {
+            background: #fff;
+            border: 1.5px solid #e74c3c;
+            color: #e74c3c;
+        }
+
+        .confirm-btn {
+            background: #4e8cff;
+            color: #fff;
+        }
+
+        .cancel-btn {
+            background: #fff;
+            border: 1.5px solid #aaa;
+            color: #888;
+        }
+
+        /* 搜索框 */
+        input[type="text"], input[type="password"], select {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        /* 添加用户按钮 */
+        .add-user-btn {
+            background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 5px;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            width: 85%;
+            max-width: 350px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 15px;
+            top: 10px;
+            font-size: 24px;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .modal h3 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            border: 1px solid #e0e6ed;
+            border-radius: 5px;
+            background: #f4f6fb;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .input-group input {
+            border: none;
+            background: transparent;
+            flex: 1;
+            margin: 0;
+            padding: 10px 0;
+        }
+
+        .input-group img {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        /* 日志相关 */
+        .log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .log-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .log-list a {
+            color: #4e8cff;
+            text-decoration: none;
+            margin-left: 10px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 动画效果 */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+
+        .fade-enter, .fade-leave-to {
+            opacity: 0;
+        }
+
+        /* 底部导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: #fff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 90;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #666;
+            flex: 1;
+            height: 100%;
+        }
+
+        .bottom-nav-item.active {
+            color: #4e8cff;
+        }
+
+        .bottom-nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.7;
+        }
+
+        .bottom-nav-item.active .bottom-nav-icon {
+            opacity: 1;
+        }
+
+        /* 底部导航图标 */
+        .icon-data { background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/database.svg'); }
+        .icon-in { background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/arrow-bar-to-down.svg'); }
+        .icon-out { background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/arrow-bar-to-up.svg'); }
+        .icon-manage { background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/settings.svg'); }
+    </style>
+</head>
+<body>
+<!-- 检测设备类型并重定向到桌面版 -->
+<script>
+    window.addEventListener('DOMContentLoaded', function() {
+        const deviceType = window.getDeviceType();
+        if (deviceType === 'desktop') {
+            window.location.href = '/home';
+        }
+    });
+</script>
+
+<div id="app">
+    <!-- 主容器 -->
+    <div class="mobile-container">
+        <!-- 标题和退出按钮 -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+            <h2 style="margin:0;font-size:1.3rem;color:#333;">仓库管理系统</h2>
+            <button id="logoutBtn" style="background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:0.85rem;font-weight:bold;">退出</button>
+        </div>
+        
+        <div class="menu-scroll" v-if="currentTab === 6">
+            <div class="sys-manage-tabs">
+                <button :class="{active: sysTab===0}" @click="sysTab=0">用户管理</button>
+                <button :class="{active: sysTab===1}" @click="sysTab=1">日志下载</button>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <transition name="fade" mode="out-in">
+                <div v-if="currentTab === 0" key="tab0">
+                    <h2>基础数据管理</h2>
+                    <p>这里是基础数据管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 1" key="tab1">
+                    <h2>入库管理</h2>
+                    <p>这里是入库管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 2" key="tab2">
+                    <h2>出库管理</h2>
+                    <p>这里是出库管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 6" key="tab6">
+                    <!-- 系统管理子组件 -->
+                    <div v-if="sysTab===0">
+                        <h2>用户管理</h2>
+                        <input v-model="search" placeholder="搜索用户名" style="width:70%;">
+                        <button @click="showAddUserModal" class="add-user-btn">添加用户</button>
+                        
+                        <table style="margin-top:15px;">
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>权限</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="user in filteredUsers" :key="user.name">
+                                    <td>{{ user.name }}</td>
+                                    <td>
+                                        <span v-if="editUser!==user.name">{{ user.live }}</span>
+                                        <select v-else v-model="editLive" style="margin:0;">
+                                            <option v-for="n in 5" :value="String(n)">{{ n }}</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div v-if="editUser!==user.name">
+                                            <button @click="startEdit(user)" class="edit-btn">修改</button>
+                                            <button @click="deleteUser(user)" class="delete-btn">删除</button>
+                                        </div>
+                                        <div v-else>
+                                            <button @click="confirmEdit(user)" class="confirm-btn">确认</button>
+                                            <button @click="cancelEdit" class="cancel-btn">取消</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        
+                        <!-- 权限说明 -->
+                        <div style="margin-top:20px;font-size:0.8rem;color:#666;">
+                            <p><strong>权限说明：</strong></p>
+                            <ul style="padding-left:20px;margin-top:5px;">
+                                <li>1级：访客无权限</li>
+                                <li>2级：只读权限</li>
+                                <li>3级：修改权限</li>
+                                <li>4级：用户管理权限</li>
+                                <li>5级：管理员</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div v-else-if="sysTab===1">
+                        <h2>日志下载</h2>
+                        <div v-if="logs.length===0 && browserlogs.length===0" style="color:#888;margin:18px 0;">
+                            暂无日志文件
+                        </div>
+                        <div v-else>
+                            <div style="margin-bottom:18px;">
+                                <strong>logs 目录：</strong>
+                                <div style="display:flex;align-items:center;margin:10px 0;">
+                                    <input type="checkbox" v-model="logsAllChecked" @change="toggleAll('logs')" style="margin-right:8px;">
+                                    <span>全选</span>
+                                    <button @click="downloadSelected('logs')" :disabled="selectedLogs.length===0"
+                                            style="margin-left:auto;padding:6px 12px;background:#4e8cff;color:#fff;border:none;border-radius:4px;">
+                                        下载选中
+                                    </button>
+                                </div>
+                                <ul class="log-list">
+                                    <li v-for="file in logs" :key="file">
+                                        <input type="checkbox" v-model="selectedLogs" :value="file">
+                                        <a :href="'/api/download_log?dir=logs&file='+encodeURIComponent(file)" target="_blank">{{ file }}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <strong>browserlogs 目录：</strong>
+                                <div style="display:flex;align-items:center;margin:10px 0;">
+                                    <input type="checkbox" v-model="browserlogsAllChecked" @change="toggleAll('browserlogs')" style="margin-right:8px;">
+                                    <span>全选</span>
+                                    <button @click="downloadSelected('browserlogs')" :disabled="selectedBrowserlogs.length===0"
+                                            style="margin-left:auto;padding:6px 12px;background:#4e8cff;color:#fff;border:none;border-radius:4px;">
+                                        下载选中
+                                    </button>
+                                </div>
+                                <ul class="log-list">
+                                    <li v-for="file in browserlogs" :key="file">
+                                        <input type="checkbox" v-model="selectedBrowserlogs" :value="file">
+                                        <a :href="'/api/download_log?dir=browserlogs&file='+encodeURIComponent(file)" target="_blank">{{ file }}</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="bottom-nav-item" :class="{active: currentTab === 0}" @click="currentTab = 0">
+            <div class="bottom-nav-icon icon-data"></div>
+            <span>基础数据</span>
+        </div>
+        <div class="bottom-nav-item" :class="{active: currentTab === 1}" @click="currentTab = 1">
+            <div class="bottom-nav-icon icon-in"></div>
+            <span>入库</span>
+        </div>
+        <div class="bottom-nav-item" :class="{active: currentTab === 2}" @click="currentTab = 2">
+            <div class="bottom-nav-icon icon-out"></div>
+            <span>出库</span>
+        </div>
+        <div class="bottom-nav-item" :class="{active: currentTab === 6}" @click="currentTab = 6">
+            <div class="bottom-nav-icon icon-manage"></div>
+            <span>系统管理</span>
+        </div>
+    </div>
+
+    <!-- 添加用户弹窗 -->
+    <div v-if="addUserModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" @click="addUserModal=false">&times;</span>
+            <h3>添加用户</h3>
+            <input v-model="addUserName" placeholder="用户名" style="width:100%;box-sizing:border-box;">
+            <div class="input-group">
+                <input v-model="addUserPwd" :type="addUserPwdShow ? 'text' : 'password'" placeholder="密码">
+                <img :src="addUserPwdShow ? '/static/display.png' : '/static/hide.png'" alt="切换密码显示"
+                     @click="addUserPwdShow=!addUserPwdShow">
+            </div>
+            <div class="input-group">
+                <input v-model="addUserPwd2" :type="addUserPwd2Show ? 'text' : 'password'" placeholder="重复密码">
+                <img :src="addUserPwd2Show ? '/static/display.png' : '/static/hide.png'" alt="切换密码显示"
+                     @click="addUserPwd2Show=!addUserPwd2Show">
+            </div>
+            <button @click="addUserConfirm" style="width:100%;background:linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);color:#fff;padding:10px 0;font-size:1rem;">
+                确认添加
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data: {
+            menus: [
+                '基础数据管理',
+                '入库管理',
+                '出库管理',
+                '系统管理'
+            ],
+            currentTab: 0,
+            sysTab: 0,
+            users: [],
+            search: '',
+            editUser: null,
+            editLive: '1',
+            logs: [],
+            browserlogs: [],
+            selectedLogs: [],
+            selectedBrowserlogs: [],
+            logsAllChecked: false,
+            browserlogsAllChecked: false,
+            addUserModal: false,
+            addUserName: '',
+            addUserPwd: '',
+            addUserPwd2: '',
+            addUserPwdShow: false,
+            addUserPwd2Show: false
+        },
+        computed: {
+            filteredUsers() {
+                if (!this.search) return this.users;
+                return this.users.filter(u => u.name.includes(this.search));
+            }
+        },
+        methods: {
+            fetchUsers() {
+                fetch('/api/users').then(r => r.json()).then(data => {
+                    this.users = data.users;
+                });
+            },
+            startEdit(user) {
+                this.editUser = user.name;
+                this.editLive = user.live;
+            },
+            cancelEdit() {
+                this.editUser = null;
+            },
+            confirmEdit(user) {
+                fetch('/api/user_live', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: user.name, live: this.editLive})
+                }).then(r => r.json()).then(res => {
+                    if (res.success) {
+                        user.live = this.editLive;
+                        this.editUser = null;
+                        alert('修改成功');
+                    } else {
+                        alert(res.message || '修改失败');
+                    }
+                });
+            },
+            deleteUser(user) {
+                if (!confirm('确定要删除用户 ' + user.name + ' 吗？')) return;
+                fetch('/api/user_delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: user.name})
+                }).then (r => r.json()).then(res => {
+                    if (res.success) {
+                        this.users = this.users.filter(u => u.name !== user.name);
+                        alert('删除成功');
+                    } else {
+                        alert(res.message || '删除失败');
+                    }
+                });
+            },
+            toggleAll(dir) {
+                if (dir === 'logs') {
+                    if (this.logsAllChecked) {
+                        this.selectedLogs = [...this.logs];
+                    } else {
+                        this.selectedLogs = [];
+                    }
+                } else if (dir === 'browserlogs') {
+                    if (this.browserlogsAllChecked) {
+                        this.selectedBrowserlogs = [...this.browserlogs];
+                    } else {
+                        this.selectedBrowserlogs = [];
+                    }
+                }
+            },
+            downloadSelected(dir) {
+                let files = dir === 'logs' ? this.selectedLogs : this.selectedBrowserlogs;
+                if (!files.length) return;
+                // 提交到后端打包下载
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/api/download_logs_zip';
+                form.target = '_blank';
+                form.style.display = 'none';
+                const dirInput = document.createElement('input');
+                dirInput.name = 'dir';
+                dirInput.value = dir;
+                form.appendChild(dirInput);
+                files.forEach(f => {
+                    const input = document.createElement('input');
+                    input.name = 'files';
+                    input.value = f;
+                    form.appendChild(input);
+                });
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => document.body.removeChild(form), 1000);
+            },
+            showAddUserModal() {
+                this.addUserModal = true;
+                this.addUserName = '';
+                this.addUserPwd = '';
+                this.addUserPwd2 = '';
+                this.addUserPwdShow = false;
+                this.addUserPwd2Show = false;
+            },
+            async addUserConfirm() {
+                if (!this.addUserName || !this.addUserPwd || !this.addUserPwd2) {
+                    alert('请输入用户名和两次密码');
+                    return;
+                }
+                if (this.addUserPwd !== this.addUserPwd2) {
+                    alert('两次输入的密码不一致');
+                    return;
+                }
+                // RSA加密
+                const publicKey = `-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk4XE/umVKmuJCtFxMEuF\nvmxOppgmRL1PZgc1Px+ILXscUVjQgL5xvL7OiKrXg/5ALI+IL80mZ3qEc7Q2c3gC\nyB9U/KhOBfUO1nQGEqKSooAhwCL7N60uoilRCzIV873ynMlpnKSVB+viWoMkICvl\nGALkaDNzBDEShDylzFPobn8Tm2IXmnq6KLam5nC/xKh997gOjmBQViCVxXUn8ClV\nqUgHw/q5LYLRl6QCEomo7SqcRmVfrL1QhXYKcFlmkIUfOEZEQ29JW/8hE+dhgkQO\niXyXzL5udYq/+nS+I2npMta5la50XrgMhDUGLfi4iIGaf2SRDFf4eIQuGp9Nr1pc\nRQIDAQAB\n-----END PUBLIC KEY-----`;
+                const encrypt = new window.JSEncrypt();
+                encrypt.setPublicKey(publicKey);
+                const encryptedPassword = encrypt.encrypt(this.addUserPwd);
+                if (!encryptedPassword) {
+                    alert('密码加密失败，请重试');
+                    return;
+                }
+                try {
+                    const res = await fetch('/register', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({username: this.addUserName, password: encryptedPassword})
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        alert('添加成功');
+                        this.addUserModal = false;
+                        this.fetchUsers();
+                    } else {
+                        alert(data.detail || '添加失败');
+                    }
+                } catch (e) {
+                    alert('添加失败，请稍后重试');
+                }
+            }
+        },
+        mounted() {
+            this.fetchUsers();
+            // 获取日志文件列表
+            fetch('/api/list_logs?dir=logs').then (r => r.json()).then(res => {
+                if (res.success) this.logs = res.files;
+            });
+            fetch('/api/list_logs?dir=browserlogs').then (r => r.json()).then(res => {
+                if (res.success) this.browserlogs = res.files;
+            });
+        },
+        watch: {
+            selectedLogs(val) {
+                this.logsAllChecked = val.length === this.logs.length && this.logs.length > 0;
+            },
+            logs(val) {
+                this.logsAllChecked = this.selectedLogs.length === val.length && val.length > 0;
+            },
+            selectedBrowserlogs(val) {
+                this.browserlogsAllChecked = val.length === this.browserlogs.length && this.browserlogs.length > 0;
+            },
+            browserlogs(val) {
+                this.browserlogsAllChecked = this.selectedBrowserlogs.length === val.length && val.length > 0;
+            }
+        }
+    });
+
+    // 退出登录按钮逻辑
+    document.getElementById('logoutBtn').onclick = function () {
+        fetch('/api/clear_conn', {method: 'POST'}).finally(() => {
+            window.location.href = '/';
+        });
+    };
+</script>
+</body>
+</html>

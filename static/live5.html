@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员页面</title>
+    <script src="/static/devid.js"></script>
+    <script src="/static/ws.js"></script>
+    <link rel="stylesheet" href="/static/home.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsencrypt/bin/jsencrypt.min.js"></script>
+</head>
+<body>
+<!-- 右上角退出按钮 -->
+<button id="logoutBtn" style="position:fixed;top:32px;right:48px;z-index:2000;padding:8px 22px;background:linear-gradient(90deg,#e74c3c 0%,#ffb199 100%);color:#fff;border:none;border-radius:8px;font-weight:600;box-shadow:0 2px 8px rgba(44,62,80,0.10);cursor:pointer;transition:background 0.2s,box-shadow 0.2s;">退出登录</button>
+<div id="app">
+    <div class="home-container">
+        <h1>仓库管理页面</h1>
+        <div class="menu-list">
+            <div class="menu-item"
+                 v-for="(item, idx) in menus"
+                 :key="idx"
+                 :class="{active: idx === currentTab}"
+                 @click="currentTab = idx">
+                <span class="menu-icon" :class="'icon-' + idx"></span>
+                <span class="menu-label">{{ idx + 1 }}. {{ item }}</span>
+            </div>
+        </div>
+        <div class="tab-content">
+            <transition name="fade" mode="out-in">
+                <div v-if="currentTab === 0" key="tab0">
+                    <h2>基础数据管理</h2>
+                    <p>这里是基础数据管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 1" key="tab1">
+                    <h2>入库管理</h2>
+                    <p>这里是入库管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 2" key="tab2">
+                    <h2>出库管理</h2>
+                    <p>这里是出库管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 3" key="tab3">
+                    <h2>库存管理</h2>
+                    <p>这里是库存管理页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 4" key="tab4">
+                    <h2>库内作业</h2>
+                    <p>这里是库内作业页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 5" key="tab5">
+                    <h2>报表查看</h2>
+                    <p>这里是报表查看页面内容。</p>
+                </div>
+                <div v-else-if="currentTab === 6" key="tab6">
+                    <system-manage></system-manage>
+                </div>
+            </transition>
+        </div>
+    </div>
+</div>
+<!-- system-manage 组件模板 -->
+<template id="system-manage-template">
+    <div>
+        <div class="sys-manage-tabs">
+            <button :class="{active: sysTab===0}" @click="sysTab=0">用户管理</button>
+            <button :class="{active: sysTab===1}" @click="sysTab=1">日志下载</button>
+        </div>
+        <div class="sys-manage-content">
+            <div v-if="sysTab===0">
+                <h3 style="text-align:center;">用户管理</h3>
+                <input v-model="search" placeholder="搜索用户名"
+                       style="margin-bottom:12px;padding:6px 10px;border-radius:5px;border:1px solid #ccc;width:220px;">
+                <button @click="showAddUserModal"
+                        style="margin-left:10px;padding:6px 18px;background:linear-gradient(90deg,#74ebd5 0%,#ACB6E5 100%);color:#fff;border:none;border-radius:5px;font-weight:600;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;box-shadow:0 2px 8px rgba(44,62,80,0.08);">
+                    添加用户
+                </button>
+                <!-- 添加用户弹窗 -->
+                <div v-if="addUserModal" class="modal"
+                     style="display:flex;align-items:center;justify-content:center;position:fixed;z-index:1000;left:0;top:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);">
+                    <div class="modal-content add-user-modal-content"
+                         style="background:#fff;padding:32px 28px 24px 28px;border-radius:14px;min-width:320px;max-width:90vw;position:relative;box-shadow:0 8px 32px rgba(44,62,80,0.18);text-align:center;">
+                        <span @click="addUserModal=false"
+                              style="position:absolute;right:18px;top:8px;font-size:28px;cursor:pointer;color:#aaa;transition:color 0.2s;z-index:2;">&times;</span>
+                        <h3 style="margin-bottom:18px;color:#2d3a4b;font-weight:600;letter-spacing:2px;">添加用户</h3>
+                        <input v-model="addUserName" placeholder="用户名" class="register-input">
+                        <div class="input-group"
+                             style="margin-bottom:18px;padding:0 12px;border:1px solid #e0e6ed;border-radius:8px;background:#f4f6fb;display:flex;align-items:center;">
+                            <input v-model="addUserPwd" type="password" placeholder="密码" class="register-input"
+                                   style="border:none;background:transparent;outline:none;flex:1;font-size:16px;padding:12px 0;margin:0;box-shadow:none;">
+                            <img :src="addUserPwdShow ? '/static/display.png' : '/static/hide.png'" alt="切换密码显示"
+                                 @click="addUserPwdShow=!addUserPwdShow"
+                                 style="width:22px;height:22px;cursor:pointer;opacity:0.7;margin-left:8px;">
+                        </div>
+                        <div class="input-group"
+                             style="margin-bottom:18px;padding:0 12px;border:1px solid #e0e6ed;border-radius:8px;background:#f4f6fb;display:flex;align-items:center;">
+                            <input v-model="addUserPwd2" :type="addUserPwd2Show?'text':'password'"
+                                   placeholder="重复密码" class="register-input"
+                                   style="border:none;background:transparent;outline:none;flex:1;font-size:16px;padding:12px 0;margin:0;box-shadow:none;">
+                            <img :src="addUserPwd2Show ? '/static/display.png' : '/static/hide.png'" alt="切换密码显示"
+                                 @click="addUserPwd2Show=!addUserPwd2Show"
+                                 style="width:22px;height:22px;cursor:pointer;opacity:0.7;margin-left:8px;">
+                        </div>
+                        <button @click="addUserConfirm"
+                                style="width:100%;padding:12px 0;background:linear-gradient(90deg,#74ebd5 0%,#ACB6E5 100%);border:none;border-radius:8px;color:#fff;font-size:18px;font-weight:600;cursor:pointer;transition:background 0.2s,box-shadow 0.2s;box-shadow:0 2px 8px rgba(44,62,80,0.08);">
+                            确认添加
+                        </button>
+                    </div>
+                </div>
+                <table style="width:100%;margin-top:10px;border-collapse:collapse;">
+                    <thead>
+                    <tr style="background:#f4f6fb;">
+                        <th style="padding:6px 8px;">用户名</th>
+                        <th style="padding:6px 8px;">权限等级</th>
+                        <th style="padding:6px 8px;">操作</th>
+                        <th style="padding:6px 8px;">权限说明</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="user in filteredUsers" :key="user.name">
+                        <td style="padding:6px 8px;">{{ user.name }}</td>
+                        <td style="padding:6px 8px;">
+                            <span v-if="editUser!==user.name">{{ user.live }}</span>
+                            <select v-else v-model="editLive" style="padding:2px 8px;">
+                                <option v-for="n in 5" :value="String(n)">{{ n }}</option>
+                            </select>
+                        </td>
+                        <td style="padding:6px 8px;">
+                            <button v-if="editUser!==user.name" @click="startEdit(user)"
+                                    style="padding:2px 18px;background:#fff;border:1.5px solid #4e8cff;color:#4e8cff;border-radius:4px;transition:background 0.2s, color 0.2s;cursor:pointer;margin-right:4px;">
+                                <span style="font-weight:600;">修改</span>
+                            </button>
+                            <button v-if="editUser!==user.name" @click="deleteUser(user)"
+                                    style="padding:2px 18px;background:#fff;border:1.5px solid #e74c3c;color:#e74c3c;border-radius:4px;transition:background 0.2s, color 0.2s;cursor:pointer;">
+                                <span style="font-weight:600;">删除</span>
+                            </button>
+                            <span v-else>
+                                <button @click="confirmEdit(user)"
+                                        style="padding:2px 18px;color:#fff;background:#4e8cff;border:none;border-radius:4px;font-weight:600;transition:background 0.2s;cursor:pointer;">
+                                    确认
+                                </button>
+                                <button @click="cancelEdit"
+                                        style="padding:2px 18px;margin-left:8px;background:#fff;border:1.5px solid #aaa;color:#888;border-radius:4px;font-weight:600;transition:background 0.2s, color 0.2s;cursor:pointer;">
+                                    取消
+                                </button>
+                            </span>
+                        </td>
+                        <td style="padding:6px 8px;">{{ getPermissionText(user.live) }}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else-if="sysTab===1">
+                <h3>日志下载</h3>
+                <div v-if="logs.length===0 && browserlogs.length===0" style="color:#888;margin:18px 0;">暂无日志文件
+                </div>
+                <div v-else>
+                    <div style="margin-bottom:18px;">
+                        <strong>logs 目录：</strong>
+                        <input type="checkbox" v-model="logsAllChecked" @change="toggleAll('logs')"
+                               style="margin-left:8px;vertical-align:middle;"> 全选
+                        <button @click="downloadSelected('logs')" :disabled="selectedLogs.length===0"
+                                style="margin-left:16px;padding:2px 14px;border-radius:4px;background:#4e8cff;color:#fff;border:none;cursor:pointer;">
+                            下载选中
+                        </button>
+                        <ul style="list-style:none;padding:0;">
+                            <li v-for="file in logs" :key="file" style="margin:6px 0;">
+                                <input type="checkbox" v-model="selectedLogs" :value="file"
+                                       style="margin-right:6px;vertical-align:middle;">
+                                <a :href="'/api/download_log?dir=logs&file='+encodeURIComponent(file)" target="_blank"
+                                   style="color:#4e8cff;text-decoration:underline;">{{ file }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <strong>browserlogs 目录：</strong>
+                        <input type="checkbox" v-model="browserlogsAllChecked" @change="toggleAll('browserlogs')"
+                               style="margin-left:8px;vertical-align:middle;"> 全选
+                        <button @click="downloadSelected('browserlogs')" :disabled="selectedBrowserlogs.length===0"
+                                style="margin-left:16px;padding:2px 14px;border-radius:4px;background:#4e8cff;color:#fff;border:none;cursor:pointer;">
+                            下载选中
+                        </button>
+                        <ul style="list-style:none;padding:0;">
+                            <li v-for="file in browserlogs" :key="file" style="margin:6px 0;">
+                                <input type="checkbox" v-model="selectedBrowserlogs" :value="file"
+                                       style="margin-right:6px;vertical-align:middle;">
+                                <a :href="'/api/download_log?dir=browserlogs&file='+encodeURIComponent(file)"
+                                   target="_blank" style="color:#4e8cff;text-decoration:underline;">{{ file }}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+<script>
+    Vue.component('system-manage', {
+        template: '#system-manage-template',
+        data() {
+            return {
+                sysTab: 0,
+                users: [],
+                search: '',
+                editUser: null,
+                editLive: '1',
+                logs: [],
+                browserlogs: [],
+                selectedLogs: [],
+                selectedBrowserlogs: [],
+                logsAllChecked: false,
+                browserlogsAllChecked: false,
+                addUserModal: false,
+                addUserName: '',
+                addUserPwd: '',
+                addUserPwd2: '',
+                addUserPwdShow: false,
+                addUserPwd2Show: false
+            };
+        },
+        computed: {
+            filteredUsers() {
+                if (!this.search) return this.users;
+                return this.users.filter(u => u.name.includes(this.search));
+            }
+        },
+        methods: {
+            fetchUsers() {
+                fetch('/api/users').then(r => r.json()).then(data => {
+                    this.users = data.users;
+                });
+            },
+            getPermissionText(level) {
+                const permissions = {
+                    '1': '1级访客无权限',
+                    '2': '2级只读权限',
+                    '3': '3级修改权限',
+                    '4': '4级用户管理权限',
+                    '5': '5级管理员'
+                };
+                return permissions[level] || '未知权限';
+            },
+            startEdit(user) {
+                this.editUser = user.name;
+                this.editLive = user.live;
+            },
+            cancelEdit() {
+                this.editUser = null;
+            },
+            confirmEdit(user) {
+                fetch('/api/user_live', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: user.name, live: this.editLive})
+                }).then(r => r.json()).then(res => {
+                    if (res.success) {
+                        user.live = this.editLive;
+                        this.editUser = null;
+                        alert('修改成功');
+                    } else {
+                        alert(res.message || '修改失败');
+                    }
+                });
+            },
+            deleteUser(user) {
+                if (!confirm('确定要删除用户 ' + user.name + ' 吗？')) return;
+                fetch('/api/user_delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: user.name})
+                }).then(r => r.json()).then(res => {
+                    if (res.success) {
+                        this.users = this.users.filter(u => u.name !== user.name);
+                        alert('删除成功');
+                    } else {
+                        alert(res.message || '删除失败');
+                    }
+                });
+            },
+            toggleAll(dir) {
+                if (dir === 'logs') {
+                    if (this.logsAllChecked) {
+                        this.selectedLogs = [...this.logs];
+                    } else {
+                        this.selectedLogs = [];
+                    }
+                } else if (dir === 'browserlogs') {
+                    if (this.browserlogsAllChecked) {
+                        this.selectedBrowserlogs = [...this.browserlogs];
+                    } else {
+                        this.selectedBrowserlogs = [];
+                    }
+                }
+            },
+            downloadSelected(dir) {
+                let files = dir === 'logs' ? this.selectedLogs : this.selectedBrowserlogs;
+                if (!files.length) return;
+                // 提交到后端打包下载
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/api/download_logs_zip';
+                form.target = '_blank';
+                form.style.display = 'none';
+                const dirInput = document.createElement('input');
+                dirInput.name = 'dir';
+                dirInput.value = dir;
+                form.appendChild(dirInput);
+                files.forEach(f => {
+                    const input = document.createElement('input');
+                    input.name = 'files';
+                    input.value = f;
+                    form.appendChild(input);
+                });
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => document.body.removeChild(form), 1000);
+            },
+            showAddUserModal() {
+                this.addUserModal = true;
+                this.addUserName = '';
+                this.addUserPwd = '';
+                this.addUserPwd2 = '';
+                this.addUserPwdShow = false;
+                this.addUserPwd2Show = false;
+            },
+            async addUserConfirm() {
+                if (!this.addUserName || !this.addUserPwd || !this.addUserPwd2) {
+                    alert('请输入用户名和两次密码');
+                    return;
+                }
+                if (this.addUserPwd !== this.addUserPwd2) {
+                    alert('两次输入的密码不一致');
+                    return;
+                }
+                // RSA加密
+                const publicKey = `-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk4XE/umVKmuJCtFxMEuF\nvmxOppgmRL1PZgc1Px+ILXscUVjQgL5xvL7OiKrXg/5ALI+IL80mZ3qEc7Q2c3gC\nyB9U/KhOBfUO1nQGEqKSooAhwCL7N60uoilRCzIV873ynMlpnKSVB+viWoMkICvl\nGALkaDNzBDEShDylzFPobn8Tm2IXmnq6KLam5nC/xKh997gOjmBQViCVxXUn8ClV\nqUgHw/q5LYLRl6QCEomo7SqcRmVfrL1QhXYKcFlmkIUfOEZEQ29JW/8hE+dhgkQO\niXyXzL5udYq/+nS+I2npMta5la50XrgMhDUGLfi4iIGaf2SRDFf4eIQuGp9Nr1pc\nRQIDAQAB\n-----END PUBLIC KEY-----`;
+                const encrypt = new window.JSEncrypt();
+                encrypt.setPublicKey(publicKey);
+                const encryptedPassword = encrypt.encrypt(this.addUserPwd);
+                if (!encryptedPassword) {
+                    alert('密码加密失败，请重试');
+                    return;
+                }
+                try {
+                    const res = await fetch('/register', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({username: this.addUserName, password: encryptedPassword})
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        alert('添加成功');
+                        this.addUserModal = false;
+                        this.fetchUsers();
+                    } else {
+                        alert(data.detail || '添加失败');
+                    }
+                } catch (e) {
+                    alert('添加失败，请稍后重试');
+                }
+            }
+        },
+        mounted() {
+            this.fetchUsers();
+            // 获取日志文件列表
+            fetch('/api/list_logs?dir=logs').then(r => r.json()).then(res => {
+                if (res.success) this.logs = res.files;
+            });
+            fetch('/api/list_logs?dir=browserlogs').then(r => r.json()).then(res => {
+                if (res.success) this.browserlogs = res.files;
+            });
+        },
+        watch: {
+            selectedLogs(val) {
+                this.logsAllChecked = val.length === this.logs.length && this.logs.length > 0;
+            },
+            logs(val) {
+                this.logsAllChecked = this.selectedLogs.length === val.length && val.length > 0;
+            },
+            selectedBrowserlogs(val) {
+                this.browserlogsAllChecked = val.length === this.browserlogs.length && this.browserlogs.length > 0;
+            },
+            browserlogs(val) {
+                this.browserlogsAllChecked = this.selectedBrowserlogs.length === val.length && val.length > 0;
+            }
+        }
+    });
+    new Vue({
+        el: '#app',
+        data: {
+            menus: [
+                '基础数据管理',
+                '入库管理',
+                '出库管理',
+                '库存管理',
+                '库内作业',
+                '报表查看',
+                '系统管理'
+            ],
+            currentTab: 0
+        },
+        components: {
+            'system-manage': Vue.options.components['system-manage']
+        }
+    });
+</script>
+<style>
+    body {
+        min-height: 100vh;
+        min-width: 100vw;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(120deg, #e0eafc 0%, #cfdef3 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .home-container {
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+        border-radius: 18px;
+        padding: 36px 32px 32px 32px;
+        width: 85vw;
+        height: 90vh;
+        max-width: 1600px;
+        max-height: 98vh;
+        margin: 0 auto;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        overflow: hidden;
+    }
+
+    .menu-list {
+        margin-top: 32px;
+        display: flex;
+        flex-direction: row;
+        gap: 18px;
+        align-items: stretch;
+        justify-content: center;
+    }
+
+    .menu-item {
+        min-width: 140px;
+        flex: 1 1 0;
+        background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+        color: #fff;
+        font-size: 1.13em;
+        font-weight: 500;
+        border-radius: 10px;
+        padding: 18px 0 18px 0;
+        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+        text-align: left;
+        letter-spacing: 1px;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.2s;
+        cursor: pointer;
+        border: 2px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        padding-left: 38px;
+    }
+
+    .menu-item .menu-icon {
+        position: absolute;
+        left: 16px;
+        width: 20px;
+        height: 20px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        opacity: 0.85;
+    }
+
+    .menu-item.active {
+        background: linear-gradient(90deg, #4e8cff 0%, #74ebd5 100%);
+        border: 2px solid #4e8cff;
+        color: #fff;
+        font-weight: 700;
+        transform: scale(1.04);
+    }
+
+    .menu-item:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 6px 18px rgba(44, 62, 80, 0.13);
+        background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
+    }
+
+    .menu-label {
+        margin-left: 8px;
+    }
+
+    /* 图标样式（可自定义SVG或PNG） */
+    .icon-0 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/database.svg');
+    }
+
+    .icon-1 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/arrow-bar-to-down.svg');
+    }
+
+    .icon-2 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/arrow-bar-to-up.svg');
+    }
+
+    .icon-3 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/archive.svg');
+    }
+
+    .icon-4 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/arrows-shuffle.svg');
+    }
+
+    .icon-5 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/chart-bar.svg');
+    }
+
+    .icon-6 {
+        background-image: url('https://cdn.jsdelivr.net/npm/@tabler/icons@2.47.0/icons/settings.svg');
+    }
+
+    .tab-content {
+        margin-top: 36px;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 32px 18px 24px 18px;
+        min-height: 180px;
+        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.06);
+        text-align: left;
+        animation: fadeIn 0.5s;
+    }
+
+    .tab-content h2 {
+        color: #2d3a4b;
+        margin-bottom: 16px;
+        font-size: 1.25em;
+    }
+
+    .tab-content p {
+        color: #666;
+        font-size: 1.08em;
+    }
+
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity 0.3s;
+    }
+
+    .fade-enter, .fade-leave-to {
+        opacity: 0;
+    }
+
+    /* 系统管理子模块样式 */
+    .sys-manage-tabs {
+        margin-bottom: 18px;
+        display: flex;
+        gap: 16px;
+    }
+
+    .sys-manage-tabs button {
+        padding: 8px 22px;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        background: #e0eafc;
+        color: #4e8cff;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .sys-manage-tabs button.active {
+        background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+        color: #fff;
+    }
+
+    .sys-manage-content {
+        background: #f8fafc;
+        border-radius: 0 0 10px 10px;
+        padding: 24px 16px 18px 16px;
+        min-height: 120px;
+        box-shadow: 0 2px 8px rgba(44, 62, 80, 0.04);
+        width: 30vw;
+        height: 70vh;
+        min-width: 320px;
+        max-width: 600px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .add-user-modal-content input.register-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 10px;
+        margin: 10px 0 18px 0;
+        border: 1px solid #e0e6ed;
+        border-radius: 5px;
+        font-size: 16px;
+        background: #f4f6fb;
+        outline: none;
+        transition: border 0.2s, box-shadow 0.2s;
+        display: block;
+    }
+
+    .add-user-modal-content input.register-input:focus {
+        border: 1.5px solid #74ebd5;
+        box-shadow: 0 0 0 2px #74ebd5;
+    }
+
+    .add-user-modal-content .input-group img {
+        width: 22px;
+        height: 22px;
+        margin-right: 0;
+        margin-left: 8px;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .add-user-modal-content .input-group img:hover {
+        opacity: 1;
+    }
+
+    .add-user-modal-content button:hover {
+        background: linear-gradient(90deg, #ACB6E5 0%, #74ebd5 100%);
+        box-shadow: 0 4px 16px rgba(44, 62, 80, 0.12);
+    }
+
+    @media (max-width: 400px) {
+        .add-user-modal-content {
+            width: 96vw !important;
+            padding: 18px 4vw 18px 4vw !important;
+        }
+
+        .add-user-modal-content input.register-input {
+            font-size: 15px !important;
+        }
+    }
+</style>
+<script>
+// 退出登录按钮逻辑
+    document.getElementById('logoutBtn').onclick = function () {
+        fetch('/api/clear_conn', {method: 'POST'}).finally(() => {
+            window.location.href = '/';
+        });
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端访客页面</title>
+    <script src="/static/devid.js"></script>
+    <script src="/static/deviceDetect.js"></script>
+    <script src="/static/ws.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .container {
+            padding: 15px;
+            max-width: 100%;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #74ebd5 0%, #ACB6E5 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        
+        .item-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .item-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .item-details {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .back-btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(90deg, #E5ACB6 0%, #ffb199 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 20px;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* 占位内容样式 */
+        .placeholder {
+            text-align: center;
+            color: #888;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>仓库查询系统 - 移动访客版</h2>
+        </div>
+        
+        <input type="text" class="search-box" id="searchInput" placeholder="搜索库存物品...">
+        
+        <div class="item-grid" id="itemList">
+            <!-- 占位内容，后期会通过API获取真实数据 -->
+            <div class="placeholder">
+                <p>这是移动访客页面，您可以在此搜索并查看库存物品</p>
+                <p>此页面为移动端优化版本</p>
+            </div>
+        </div>
+        
+        <button class="back-btn" id="backBtn">返回登录页</button>
+    </div>
+
+    <script>
+        // 确保只在移动设备上访问
+        window.addEventListener('DOMContentLoaded', function() {
+            const deviceType = window.getDeviceType();
+            if (deviceType === 'desktop') {
+                window.location.href = '/static/guest_desktop.html';
+            }
+        });
+        
+        // 返回按钮事件处理
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.location.href = '/';
+        });
+        
+        // 搜索功能（未实现，仅示例）
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            console.log('搜索:', searchTerm);
+            // 这里将来会添加实际的搜索逻辑
+        });
+    </script>
+</body>
+</html>
+

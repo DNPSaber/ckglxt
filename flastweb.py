@@ -1,5 +1,5 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request, Cookie, Body, Response
-from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request, Cookie, Body, Response, Query, Form
+from fastapi.responses import FileResponse, RedirectResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sql_control import sql_Management
 import uvicorn
@@ -17,6 +17,8 @@ from typing import Dict, Set
 from sqlite3 import connect
 import os
 import asyncio
+import zipfile
+import io
 
 # 加载 RSA 私钥
 private_key = RSA.import_key(open("generate_rsa_key/private.pem").read())
@@ -67,10 +69,9 @@ def login(request: LoginRequest, http_request: Request):
         logger.error(f"密码解密失败: {e}")
         raise HTTPException(status_code=400, detail="密码解码失败")
 
-    if request.username != "root":
-        decrypted_password = hashlib.md5(decrypted_password.encode('utf-8')).hexdigest()
+    decrypted_password = hashlib.md5(decrypted_password.encode('utf-8')).hexdigest()
 
-        # 查询user.db3数据库，校验用户名和密码
+    # 查询user.db3数据库，校验用户名和密码
     try:
         conn = connect('user.db3')
         cursor = conn.cursor()
@@ -86,7 +87,7 @@ def login(request: LoginRequest, http_request: Request):
         logger.error(f"数据库查询失败: {e}")
         raise HTTPException(status_code=500, detail="数据库查询失败")
 
-    live = live_level
+    live = str(live_level)  # 强制转为字符串，确保后续判断正确
 
     # 创建数据库连接并存储到连接池
     if live > "1":
@@ -258,10 +259,25 @@ def home(request: Request, jwt_token: str = Cookie(None)):
         if not row:
             return HTMLResponse('<script>alert("用户不存在，请重新登录");window.location.href="/";</script>')
         live = row[0]
-        if str(live) == "1":
-            return FileResponse("static/live1.html")
+        logger.info('用户 %s 等级: %s', userID, live)
+        
+        # 获取设备类型 (从 User-Agent 判断)
+        user_agent = request.headers.get("user-agent", "").lower()
+        is_mobile = any(keyword in user_agent for keyword in ["android", "iphone", "ipad", "mobile", "tablet"])
+        
+        # 根据设备类型和用户等级确定跳转页面
+        if is_mobile and live == 5 and os.path.exists("static/live5_mobile.html"):
+            # 管理员用户的移动端版本
+            logger.info('用户 %s 使用移动设备访问，跳转到移动版管理员页面', userID)
+            return FileResponse("static/live5_mobile.html")
+        elif is_mobile and os.path.exists(f"static/live{live}_mobile.html"):
+            # 如果存在对应权限的移动端页面，则跳转
+            logger.info('用户 %s 使用移动设备访问，跳转到移动版页面', userID)
+            return FileResponse(f"static/live{live}_mobile.html")
         else:
-            return FileResponse("static/home.html")
+            # 桌面版或没有专门的移动版页面
+            logger.info('用户 %s 使用桌面设备访问或无专用移动页面，跳转到标准页面', userID)
+            return FileResponse(f"static/live{live}.html")
     except jwt.ExpiredSignatureError:
         return HTMLResponse('<script>alert("登录已超过30分钟，请重新登录");window.location.href="/";</script>')
     except Exception:
@@ -342,6 +358,111 @@ def clear_conn(request: Request, jwt_token: str = Cookie(None)):
     except Exception as e:
         logger.error(f"clear_conn error: {e}")
         return {"message": "error"}
+
+
+@app.get("/api/users")
+def get_users():
+    """
+    获取所有用户（不返回密码），用于用户管理页面
+    """
+    try:
+        conn = connect('user.db3')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, live FROM usernames")
+        users = [{"name": row[0], "live": row[1]} for row in cursor.fetchall()]
+        conn.close()
+        return {"users": users}
+    except Exception as e:
+        logger.error(f"获取用户列表失败: {e}")
+        raise HTTPException(status_code=500, detail="获取用户列表失败")
+
+
+class UserLiveRequest(BaseModel):
+    name: str
+    live: str
+
+
+@app.post("/api/user_live")
+def update_user_live(req: UserLiveRequest):
+    """
+    修改用户 live 等级
+    """
+    try:
+        conn = connect('user.db3')
+        cursor = conn.cursor()
+        cursor.execute("UPDATE usernames SET live=? WHERE name=?", (req.live, req.name))
+        if cursor.rowcount == 0:
+            conn.close()
+            return {"success": False, "message": "用户不存在"}
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"修改用户权限失败: {e}")
+        return {"success": False, "message": "修改失败"}
+
+
+class UserDeleteRequest(BaseModel):
+    name: str
+
+@app.post("/api/user_delete")
+def delete_user(req: UserDeleteRequest):
+    """
+    删除用户（根据用户名）
+    """
+    try:
+        conn = connect('user.db3')
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM usernames WHERE name=?", (req.name,))
+        if cursor.rowcount == 0:
+            conn.close()
+            return {"success": False, "message": "用户不存在"}
+        conn.commit()
+        conn.close()
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"删除用户失败: {e}")
+        return {"success": False, "message": "删除失败"}
+
+
+@app.get("/api/list_logs")
+def list_logs(dir: str = Query(..., pattern="^(logs|browserlogs)$")):
+    base_dir = "/root/dnpsaber/" + dir
+    try:
+        if not os.path.isdir(base_dir):
+            return {"success": True, "files": []}
+        files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]
+        return {"success": True, "files": files}
+    except Exception as e:
+        logger.error(f"列出日志文件失败: {e}")
+        return {"success": False, "files": [], "message": str(e)}
+    
+
+@app.get("/api/download_log")
+def download_log(dir: str = Query(..., pattern="^(logs|browserlogs)$"), file: str = Query(...)):
+    base_dir = f"/root/dnpsaber/{dir}"
+    file_path = os.path.join(base_dir, file)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="文件不存在")
+    return FileResponse(file_path, filename=file)
+
+
+@app.post("/api/download_logs_zip")
+def download_logs_zip(dir: str = Form(...), files: list[str] = Form(...)):
+    # 只允许 logs 或 browserlogs
+    if dir not in ("logs", "browserlogs"):
+        raise HTTPException(status_code=400, detail="目录不合法")
+    base_dir = f"/root/dnpsaber/{dir}"
+    mem_zip = io.BytesIO()
+    with zipfile.ZipFile(mem_zip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for fname in files:
+            fpath = os.path.join(base_dir, fname)
+            if os.path.isfile(fpath):
+                zf.write(fpath, arcname=fname)
+    mem_zip.seek(0)
+    return StreamingResponse(mem_zip, media_type="application/zip", headers={
+        "Content-Disposition": f"attachment; filename={dir}_logs.zip"
+    })
 
 
 def web_run():

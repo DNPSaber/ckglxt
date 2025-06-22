@@ -71,7 +71,7 @@ function connectWebSocketWithRetry(token, retryDelay = 3000) {
                     console.log("发送心跳包");
                     ws.send('{\"type\": \"ping\"}');
                 }
-            }, 5000);
+            }, 90000);
         };
         ws.onclose = function (event) {
             clearInterval(ws.heartbeatInterval);

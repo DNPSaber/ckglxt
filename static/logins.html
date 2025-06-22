@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <script src="/static/ws.js"></script>
     <script src="/static/devid.js"></script>
+    <script src="/static/deviceDetect.js"></script>
+    <script src="/static/ws.js"></script>
     <link rel="stylesheet" href="/static/logins.css">
     <script src="https://cdn.jsdelivr.net/npm/jsencrypt/bin/jsencrypt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -69,6 +70,7 @@
     </div>
     <button>登录</button>
     <button id="registerBtn" style="margin-top: 10px; background: #ACB6E5;">注册</button>
+    <button id="guestLoginBtn" style="margin-top: 10px; background: #E5ACB6;">访客登录</button>
     <div class="beian">
         <a href="https://beian.miit.gov.cn/" target="_blank">宁ICP备2025008327号-1</a>
     </div>
@@ -104,6 +106,17 @@
             passwordInput.type = "password";
             toggleIcon.src = "/static/hide.png";
             toggleIcon.alt = "隐藏密码";
+        }
+    });
+
+    // 访客登录按钮点击事件
+    document.getElementById("guestLoginBtn").addEventListener("click", function() {
+        // 获取设备类型并根据类型跳转到相应页面
+        const deviceType = window.getDeviceType();
+        if (deviceType === 'mobile' || deviceType === 'tablet') {
+            window.location.href = "/static/guest_mobile.html";
+        } else {
+            window.location.href = "/static/guest.html";
         }
     });
 </script>
